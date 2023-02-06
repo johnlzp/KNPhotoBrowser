@@ -328,7 +328,7 @@
 //    }else {
 //        [operationBtn setBackgroundImage:[UIImage imageNamed:@"KNPhotoBrowser.bundle/more_tap@3x.png" inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
 //    }
-    [operationBtn setBackgroundImage:[UIImage imageNamed:imageName inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
+    [operationBtn setBackgroundImage:[UIImage imageNamed:@"l6_fh"] forState:UIControlStateNormal];
     [operationBtn addTarget:self action:@selector(operationBtnIBAction) forControlEvents:UIControlEventTouchUpInside];
     [operationBtn setHidden:!_isNeedMoreBtn];
     _operationBtn = operationBtn;
