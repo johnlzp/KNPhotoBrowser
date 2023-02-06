@@ -322,13 +322,12 @@
 //    [operationBtn setClipsToBounds:true];
 //    [operationBtn setBackgroundColor:[UIColor blackColor]];
 //    [operationBtn setAlpha:0.4];
-    NSString *imageName = @"l6_gd";
 //    if(UIScreen.mainScreen.scale < 3) {
 //        [operationBtn setBackgroundImage:[UIImage imageNamed:@"KNPhotoBrowser.bundle/more_tap@2x.png" inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
 //    }else {
 //        [operationBtn setBackgroundImage:[UIImage imageNamed:@"KNPhotoBrowser.bundle/more_tap@3x.png" inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
 //    }
-    [operationBtn setBackgroundImage:[UIImage imageNamed:@"l6_fh"] forState:UIControlStateNormal];
+    [operationBtn setBackgroundImage:[UIImage imageNamed:@"l6_gd"] forState:UIControlStateNormal];
     [operationBtn addTarget:self action:@selector(operationBtnIBAction) forControlEvents:UIControlEventTouchUpInside];
     [operationBtn setHidden:!_isNeedMoreBtn];
     _operationBtn = operationBtn;
