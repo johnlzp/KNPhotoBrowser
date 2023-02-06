@@ -183,6 +183,9 @@ typedef NS_ENUM(NSInteger, KNPhotoDownloadState) {
 /// itemsArr contain KNPhotoItems : url | sourceView.....
 @property (nonatomic,strong) NSArray<KNPhotoItems *> *itemsArr;
 
+/// chat数据源
+@property (nonatomic, strong)NSArray *messageArray;
+
 /// delegate
 @property (nonatomic,weak  ) id<KNPhotoBrowserDelegate> delegate;
 

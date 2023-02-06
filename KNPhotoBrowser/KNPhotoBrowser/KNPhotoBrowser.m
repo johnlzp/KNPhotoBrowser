@@ -32,6 +32,7 @@
     KNPhotoBrowserNumView      *_numView;
     UIPageControl              *_pageControl;
     UIButton                   *_operationBtn;
+    UIButton                   *_dismissBtn;
     KNPhotoBrowserImageView    *_imageView;
     KNProgressHUD              *_progressHUD;
     
@@ -317,19 +318,28 @@
     NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(@"KNPhotoBrowser")];
     
     UIButton *operationBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    [operationBtn.layer setCornerRadius:3];
-    [operationBtn setClipsToBounds:true];
-    [operationBtn setBackgroundColor:[UIColor blackColor]];
-    [operationBtn setAlpha:0.4];
-    if(UIScreen.mainScreen.scale < 3) {
-        [operationBtn setBackgroundImage:[UIImage imageNamed:@"KNPhotoBrowser.bundle/more_tap@2x.png" inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
-    }else {
-        [operationBtn setBackgroundImage:[UIImage imageNamed:@"KNPhotoBrowser.bundle/more_tap@3x.png" inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
-    }
+//    [operationBtn.layer setCornerRadius:3];
+//    [operationBtn setClipsToBounds:true];
+//    [operationBtn setBackgroundColor:[UIColor blackColor]];
+//    [operationBtn setAlpha:0.4];
+    NSString *imageName = @"l6_gd";
+//    if(UIScreen.mainScreen.scale < 3) {
+//        [operationBtn setBackgroundImage:[UIImage imageNamed:@"KNPhotoBrowser.bundle/more_tap@2x.png" inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
+//    }else {
+//        [operationBtn setBackgroundImage:[UIImage imageNamed:@"KNPhotoBrowser.bundle/more_tap@3x.png" inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
+//    }
+    [operationBtn setBackgroundImage:[UIImage imageNamed:imageName inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
     [operationBtn addTarget:self action:@selector(operationBtnIBAction) forControlEvents:UIControlEventTouchUpInside];
     [operationBtn setHidden:!_isNeedRightTopBtn];
     _operationBtn = operationBtn;
     [self.view addSubview:operationBtn];
+    
+    UIButton *dismissBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    [dismissBtn setBackgroundImage:[UIImage imageNamed:@"l6_fh"] forState:UIControlStateNormal];
+    [dismissBtn addTarget:self action:@selector(dismissBtnIBAction) forControlEvents:UIControlEventTouchUpInside];
+    [dismissBtn setHidden:!_isNeedRightTopBtn];
+    _dismissBtn = dismissBtn;
+    [self.view addSubview:dismissBtn];
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section{
@@ -886,6 +896,7 @@
         [_numView setAlpha:1];
         [_pageControl setAlpha:1];
         [_operationBtn setAlpha:1];
+        [_dismissBtn setAlpha:1];
     }
 }
 - (void)customViewSubViewsWillDismiss{
@@ -898,6 +909,7 @@
         [_numView setAlpha:0.0];
         [_pageControl setAlpha:0.0];
         [_operationBtn setAlpha:0.0];
+        [_dismissBtn setAlpha:0.0];
     }
 }
 
@@ -1082,9 +1094,12 @@
         x = 35;
     }
     
-    [_numView setFrame:(CGRect){{0,y},{PBViewWidth,25}}];
+    [_numView setFrame:(CGRect){{0,y},{PBViewWidth,36}}];//25
     [_pageControl setFrame:(CGRect){{0,PBViewHeight - 50},{PBViewWidth,30}}];
-    [_operationBtn setFrame:(CGRect){{PBViewWidth - 35 - 15 - x,y},{35,20}}];
+    [_operationBtn setFrame:(CGRect){{PBViewWidth - 35 - 15 - x,y},{36,36}}];
+    _operationBtn.center = CGPointMake(_operationBtn.center.x, _numView.center.y);
+    [_dismissBtn setFrame:(CGRect){{10,y - 8},{36,36}}];
+    _dismissBtn.center = CGPointMake(_dismissBtn.center.x, _numView.center.y);
     
     if(_offsetPageIndex){
         [_collectionView setContentOffset:(CGPoint){_layout.itemSize.width * _offsetPageIndex,0} animated:false];
@@ -1141,6 +1156,33 @@
 - (void)operationBtnIBAction{
     if ([_delegate respondsToSelector:@selector(photoBrowser:rightBtnOperationActionWithIndex:)]) {
         [_delegate photoBrowser:self rightBtnOperationActionWithIndex:_currentIndex];
+    }
+}
+
+- (void)dismissBtnIBAction{
+    KNPhotoItems *items = self.itemsArr[_currentIndex];
+    id playerView;
+    if (items.isVideo) {
+        KNPhotoVideoCell *cell = (KNPhotoVideoCell *)[_collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:_currentIndex inSection:0]];
+        
+        if (_isNeedOnlinePlay) {
+            playerView = (KNPhotoAVPlayerView *)cell.onlinePlayerView;
+        }else {
+            playerView = (KNPhotoLocateAVPlayerView *)cell.locatePlayerView;
+        }
+        
+        if (_isNeedOnlinePlay) {
+            _startFrame = [(KNPhotoAVPlayerView *)playerView playerView].frame;
+        }else {
+            _startFrame = [(KNPhotoLocateAVPlayerView *)playerView playerView].frame;
+        }
+        [playerView playerWillReset]; /// stop avplayer and cancel download task
+        [self cancelVideoDownload];
+        [playerView setIsNeedVideoPlaceHolder:true];
+        [self dismiss];
+        [[(KNPhotoLocateAVPlayerView *)playerView playerView] setBackgroundColor:UIColor.clearColor];
+    }else{
+        [self dismiss];
     }
 }
 
