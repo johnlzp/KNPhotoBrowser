@@ -330,7 +330,7 @@
 //    }
     [operationBtn setBackgroundImage:[UIImage imageNamed:imageName inBundle:bundle compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
     [operationBtn addTarget:self action:@selector(operationBtnIBAction) forControlEvents:UIControlEventTouchUpInside];
-    [operationBtn setHidden:!_isNeedRightTopBtn];
+    [operationBtn setHidden:!_isNeedMoreBtn];
     _operationBtn = operationBtn;
     [self.view addSubview:operationBtn];
     

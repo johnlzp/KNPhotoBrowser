@@ -224,6 +224,8 @@ typedef NS_ENUM(NSInteger, KNPhotoDownloadState) {
 /// video long press : delegate function `photoBrowser: videoLongPress: index:`.
 @property (nonatomic,assign) BOOL isNeedLongPress;
 
+@property (nonatomic,assign) BOOL isNeedMoreBtn;
+
 /// is or not need prefetch image, maxCount is 8 (KNPhotoBrowserPch.h)
 @property (nonatomic,assign) BOOL isNeedPrefetch;
 
