@@ -101,6 +101,26 @@
     [self addGestureRecognizer:longPress];
     [self addGestureRecognizer:pan];
 }
+
+- (void)scanQrimage:(UIImage *)image item:(KNPhotoItems *)item{
+    if (image && item.qrcodeString.length == 0){
+        item.qrcodeString = [self identificationQRCode:image];
+    }
+}
+
+- (NSString *)identificationQRCode:(UIImage *)qrImage {
+    if (!qrImage) return @"";
+    CIContext * con = [[CIContext alloc] init];
+    CIDetector * detector = [CIDetector detectorOfType:CIDetectorTypeQRCode context:con options:@{CIDetectorAccuracy: CIDetectorAccuracyHigh}];
+    CIImage *  cIimage = [[CIImage alloc] initWithImage:qrImage];
+    NSArray * array = [detector featuresInImage:cIimage];
+    if (array.count){
+        CIQRCodeFeature * codef = (CIQRCodeFeature *)array.firstObject;
+        return codef.messageString;
+    }
+    return @"error";
+}
+
 #pragma mark - pan 
 - (void)scrollViewDidPan:(UIPanGestureRecognizer *)pan {
     if (pan.state == UIGestureRecognizerStateEnded || pan.state == UIGestureRecognizerStateCancelled || pan.state == UIGestureRecognizerStateFailed ) {
@@ -156,6 +176,7 @@
     if(!url){
         if (photoItem.isLocateGif == true) {
             [_imageView setImage:photoItem.sourceImage];
+            [self scanQrimage:_imageView.image item:photoItem];
         }else {
             [_imageView setImage:placeHolder];
         }
@@ -188,6 +209,7 @@
         if(!error){
             [progressHUD setProgress:1.f];
             [weakSelf layoutSubviews];
+            [weakSelf scanQrimage:weakSelf.imageView.image item:photoItem];
         }else{
             [progressHUD setHidden:true];
         }
