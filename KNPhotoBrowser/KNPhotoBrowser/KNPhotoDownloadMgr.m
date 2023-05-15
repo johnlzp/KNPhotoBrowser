@@ -235,5 +235,65 @@ static KNPhotoDownloadMgr *_mgr = nil;
     }
 }
 
+- (void)removeExpiredVideoData{
+    dispatch_async(dispatch_queue_create("BFDeleteVideo", DISPATCH_QUEUE_CONCURRENT), ^{
+        NSURL *diskCacheURL = [NSURL fileURLWithPath:self->_filePath isDirectory:YES];
+        //最后修改的时间
+        NSURLResourceKey cacheContentDateKey = NSURLContentModificationDateKey;
+        //NSURLTotalFileAllocatedSizeKey判断URL目录中所分配的空间大小
+        NSArray<NSString *> *resourceKeys = @[NSURLIsDirectoryKey, cacheContentDateKey, NSURLTotalFileAllocatedSizeKey];
+        NSDirectoryEnumerator *fileEnumerator = [[NSFileManager defaultManager] enumeratorAtURL:diskCacheURL
+                                                   includingPropertiesForKeys:resourceKeys
+                                                                      options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                                 errorHandler:NULL];
+    //    NSDate *expirationDate = (maxDiskAge < 0) ? nil: [NSDate dateWithTimeIntervalSinceNow:-maxDiskAge];
+        NSMutableDictionary<NSURL *, NSDictionary<NSString *, id> *> *cacheFiles = [NSMutableDictionary dictionary];
+        NSUInteger currentCacheSize = 0;
+        NSMutableArray<NSURL *> *urlsToDelete = [[NSMutableArray alloc] init];
+        for (NSURL *fileURL in fileEnumerator) {
+            NSError *error;
+            NSDictionary<NSString *, id> *resourceValues = [fileURL resourceValuesForKeys:resourceKeys error:&error];
+            if (error || !resourceValues || [resourceValues[NSURLIsDirectoryKey] boolValue]) {
+                continue;
+            }
+
+//            NSDate *modifiedDate = resourceValues[cacheContentDateKey];
+    //        if (expirationDate && [[modifiedDate laterDate:expirationDate] isEqualToDate:expirationDate]) {
+    //            [urlsToDelete addObject:fileURL];
+    //            continue;
+    //        }
+            NSNumber *totalAllocatedSize = resourceValues[NSURLTotalFileAllocatedSizeKey];
+            currentCacheSize += totalAllocatedSize.unsignedIntegerValue;
+            cacheFiles[fileURL] = resourceValues;
+        }
+
+        for (NSURL *fileURL in urlsToDelete) {
+            [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
+        }
+        NSUInteger maxDiskSize = 1024 * 1024 * 400;
+        NSArray<NSURL *> *sortedFiles = [cacheFiles keysSortedByValueWithOptions:NSSortConcurrent
+                                                                 usingComparator:^NSComparisonResult(id obj1, id obj2) {
+                                                                     return [obj1[cacheContentDateKey] compare:obj2[cacheContentDateKey]];
+                                                                 }];
+        if (maxDiskSize > 0 && currentCacheSize > maxDiskSize) {
+            const NSUInteger desiredCacheSize = maxDiskSize / 2;
+            NSArray<NSURL *> *sortedFiles = [cacheFiles keysSortedByValueWithOptions:NSSortConcurrent
+                                                                     usingComparator:^NSComparisonResult(id obj1, id obj2) {
+                                                                         return [obj1[cacheContentDateKey] compare:obj2[cacheContentDateKey]];
+                                                                     }];
+            for (NSURL *fileURL in sortedFiles) {
+                if ([[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil]) {
+                    NSDictionary<NSString *, id> *resourceValues = cacheFiles[fileURL];
+                    NSNumber *totalAllocatedSize = resourceValues[NSURLTotalFileAllocatedSizeKey];
+                    currentCacheSize -= totalAllocatedSize.unsignedIntegerValue;
+
+                    if (currentCacheSize < desiredCacheSize) {
+                        break;
+                    }
+                }
+            }
+        }
+    });
+}
 @end
 

@@ -63,6 +63,7 @@ typedef void(^PhotoDownLoadBlock)(KNPhotoDownloadState downloadState, float prog
 /// remove all video
 - (void)removeAllVideo;
 
+- (void)removeExpiredVideoData;
 @end
 
 NS_ASSUME_NONNULL_END

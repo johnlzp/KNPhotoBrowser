@@ -22,6 +22,8 @@
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SDWebImage/SDWebImagePrefetcher.h>
 #import <SDWebImage/SDImageCache.h>
+#import <SDWebImage/UIImage+MultiFormat.h>
+#import <SDWebImage/UIImage+Metadata.h>
 
 #import <MobileCoreServices/UTCoreTypes.h>
 #import <Photos/Photos.h>
@@ -126,7 +128,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
             [[UIApplication sharedApplication] setStatusBarHidden:false animated:false];
-#pragma clang diagnostic pop          
+#pragma clang diagnostic pop
         }
     }
 }
@@ -276,8 +278,8 @@
     pageControl.userInteractionEnabled = false;
     if (_isNeedPageControlTarget == true) {
         pageControl.userInteractionEnabled = true;
-        [pageControl addTarget:self action:@selector(pageControlValueChange:) forControlEvents:UIControlEventValueChanged];        
-    } 
+        [pageControl addTarget:self action:@selector(pageControlValueChange:) forControlEvents:UIControlEventValueChanged];
+    }
     [pageControl setCurrentPage:_currentIndex];
     [pageControl setNumberOfPages:_itemsArr.count];
     [pageControl setHidden:!_isNeedPageControl];
@@ -358,7 +360,7 @@
                 [weakSelf.delegate photoBrowser:weakSelf imageSingleTapWithIndex:weakSelf.currentIndex];
             }
             if (weakSelf.isGoingToPush == false){
-                [weakSelf dismiss];                
+                [weakSelf dismiss];
             }
         };
         cell.longPressTap = ^{
@@ -641,6 +643,7 @@
 
 #pragma mark - photoBrowser will present -- window
 - (void)present{
+    self.isNeedOnlinePlay = false;
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window.rootViewController presentViewController:self animated:false completion:^{
         
@@ -648,12 +651,14 @@
 }
 #pragma mark - photoBrowser will present -- controller
 - (void)present:(UIViewController *)controller {
+    self.isNeedOnlinePlay = false;
     [controller presentViewController:self animated:false completion:^{
         
     }];
 }
 #pragma mark - photoBrowser will present -- controller
 - (void)presentOn:(UIViewController *)controller {
+    self.isNeedOnlinePlay = false;
     [controller presentViewController:self animated:false completion:^{
         
     }];
@@ -671,7 +676,7 @@
         if (_isGoingToPush) {
             [self.navigationController popViewControllerAnimated:true];
         }else {
-            [self dismissViewControllerAnimated:true completion:nil];            
+            [self dismissViewControllerAnimated:true completion:nil];
         }
         return;
     }
@@ -1285,7 +1290,7 @@
         if (_isGoingToPush) {
             [self.navigationController popViewControllerAnimated:true];
         }else {
-            [self dismissViewControllerAnimated:true completion:nil];            
+            [self dismissViewControllerAnimated:true completion:nil];
         }
     }else{
         [_pageControl setCurrentPage:_currentIndex];
@@ -1359,6 +1364,9 @@
     }else{ // image
         if(items.url){ // net image
             SDImageCache *cache = [SDImageCache sharedImageCache];
+            if (items.cachePath.length > 0) {
+                cache = [[SDImageCache alloc] initWithNamespace:@"data" diskCacheDirectory:items.cachePath];
+            }
             SDWebImageManager *mgr = [SDWebImageManager sharedManager];
             [cache diskImageExistsWithKey:items.url completion:^(BOOL isInCache) {
                 if(!isInCache){
@@ -1371,13 +1379,18 @@
                     }
                 }else{
                     [[mgr imageCache] queryImageForKey:items.url options:SDWebImageQueryMemoryData | SDWebImageRetryFailed context:nil completion:^(UIImage * _Nullable image, NSData * _Nullable data, SDImageCacheType cacheType) {
+                        SDImageFormat format = image.sd_imageFormat;
                         if([image images] != nil){
                             [weakself savePhotoToLocation:data url:items.url];
                         }else{
                             if(image){
-                                dispatch_async(dispatch_get_main_queue(), ^{
-                                    UIImageWriteToSavedPhotosAlbum(image, weakself, @selector(image:didFinishSavingWithError:contextInfo:), NULL);
-                                });
+                                if ([items.url hasSuffix:@".gif"] || format == SDImageFormatGIF){
+                                    [weakself savePhotoToLocation:data url:items.url];
+                                }else{
+                                    dispatch_async(dispatch_get_main_queue(), ^{
+                                        UIImageWriteToSavedPhotosAlbum(image, weakself, @selector(image:didFinishSavingWithError:contextInfo:), NULL);
+                                    });
+                                }
                             }
                         }
                     }];
@@ -1386,9 +1399,15 @@
         }else{ // locate image or sourceimage
             UIImageView *imageView = [self tempViewFromSourceViewWithCurrentIndex:self.currentIndex];
             if(imageView.image){
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    UIImageWriteToSavedPhotosAlbum(imageView.image, self, @selector(image:didFinishSavingWithError:contextInfo:), NULL);
-                });
+                SDImageFormat format = imageView.image.sd_imageFormat;
+                if (format == SDImageFormatGIF){
+                    KNPhotoItems *currentItems = self.itemsArr[self.currentIndex];
+                    [self savePhotoToLocation:imageView.image.sd_imageData url:currentItems.url];
+                }else{
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        UIImageWriteToSavedPhotosAlbum(imageView.image, self, @selector(image:didFinishSavingWithError:contextInfo:), NULL);
+                    });
+                }
             }else{
                 if ([weakself.delegate respondsToSelector:@selector(photoBrowser:state:progress:photoItemRelative:photoItemAbsolute:)]) {
                     [weakself.delegate photoBrowser:weakself
@@ -1600,7 +1619,7 @@
 }
 
 
-/// pageCotrol did be selected by click 
+/// pageCotrol did be selected by click
 /// @param pageControl pageControl
 - (void)pageControlValueChange:(UIPageControl *)pageControl {
 #ifdef DEBUG

@@ -393,6 +393,7 @@
                     weakself.actionView.isBuffering = true;
                     weakself.actionView.isPlaying = true;
                     [weakself addPlayerItemObserver];
+                    [manager removeExpiredVideoData];
                 });
             }
             if (downloadState == KNPhotoDownloadStateUnknow || downloadState == KNPhotoDownloadStateFailure) {

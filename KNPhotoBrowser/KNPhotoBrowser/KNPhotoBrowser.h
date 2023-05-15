@@ -94,6 +94,7 @@ typedef NS_ENUM(NSInteger, KNPhotoDownloadState) {
 /// video is downloading, current progress
 @property (nonatomic,assign) float downloadProgress;
 @property (nonatomic, copy, nullable)NSString *qrcodeString;
+@property (nonatomic, copy)NSString *cachePath;
 @end
 
 @interface UIDevice(PBExtension)
